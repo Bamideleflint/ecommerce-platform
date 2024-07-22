@@ -35,7 +35,13 @@ jobs:
         run: npm run build
         working-directory: app/frontend
 
-    #   Run backend test
-    #   - name: Run backend tests
-    #     run: npm test
-    #     working-directory: api
+    # Uncomment and customize the following steps as needed
+
+    # Run backend tests
+    # - name: Run backend tests
+    #   run: npm test
+    #   working-directory: api
+
+    # Deploy or further steps can be added here
+    # - name: Deploy to production
+    #   run: ./deploy.sh
