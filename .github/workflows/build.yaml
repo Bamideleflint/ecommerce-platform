@@ -31,17 +31,26 @@ jobs:
         run: npm install
         working-directory: app/frontend
 
-      - name: Build frontend
-        run: npm run build
+      # Build the backend Docker image
+      - name: Build Backend Docker image
+        run: docker build -t mshallom/api:latest .
+        working-directory: api
+
+      # Build the frontend Docker image
+      - name: Build Frontend Docker image
+        run: docker build -t mshallom/app:latest .
         working-directory: app/frontend
 
-    # Uncomment and customize the following steps as needed
+      # Push the Docker images to a registry
+      - name: Log in to Docker Hub
+        run: echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
 
-    # Run backend tests
-    # - name: Run backend tests
-    #   run: npm test
-    #   working-directory: api
+      - name: Push Backend Docker image
+        run: docker push bamideleflint/api:latest
 
-    # Deploy or further steps can be added here
-    # - name: Deploy to production
-    #   run: ./deploy.sh
+      - name: Push Frontend Docker image
+        run: docker push bamideleflint/app:latest
+
