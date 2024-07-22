@@ -33,12 +33,12 @@ jobs:
 
       # Build the backend Docker image
       - name: Build Backend Docker image
-        run: docker build -t mshallom/api:latest .
+        run: docker build -t bamideleflint/api:latest .
         working-directory: api
 
       # Build the frontend Docker image
       - name: Build Frontend Docker image
-        run: docker build -t mshallom/app:latest .
+        run: docker build -t bamideleflint/app:latest .
         working-directory: app/frontend
 
       # Push the Docker images to a registry
