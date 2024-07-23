@@ -1,0 +1,43 @@
+name: Frontend CI
+
+on:
+  push:
+    paths:
+      - 'app/frontend/**' # Trigger only when changes are made in the frontend directory
+  pull_request:
+    paths:
+      - 'app/frontend/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+
+      # Install frontend dependencies
+      - name: Install frontend dependencies
+        run: npm install
+        working-directory: app/frontend
+
+      # Build the frontend Docker image
+      - name: Build Frontend Docker image
+        run: docker build -t bamideleflint/app:latest .
+        working-directory: app/frontend
+
+      # Log in to Docker Hub
+      - name: Log in to Docker Hub
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+
+      # Push the Frontend Docker image
+      - name: Push Frontend Docker image
+        run: docker push bamideleflint/app:latest
