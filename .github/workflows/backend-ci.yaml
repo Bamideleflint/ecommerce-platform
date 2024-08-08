@@ -3,7 +3,7 @@ name: Backend CI
 on:
   push:
     paths:
-      - 'api/**'  # Trigger only when changes are made in the backend directory
+      - 'api/**'
   pull_request:
     paths:
       - 'api/**'
@@ -21,28 +21,34 @@ jobs:
         with:
           node-version: '14'
 
-      # Install backend dependencies
+      - name: Cache Node.js modules
+        uses: actions/cache@v2
+        with:
+          path: |
+            api/node_modules
+            api/.cache
+          key: ${{ runner.os }}-node-${{ hashFiles('api/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
       - name: Install backend dependencies
         run: npm install
         working-directory: api
 
-      # Build the backend Docker image
-      - name: Build Backend Docker image
+      - name: Build backend Docker image
         run: docker build -t bamideleflint/api:latest .
         working-directory: api
 
-      # Authenticate with AWS ECR and push Docker image
-      - name: Push Docker image to Amazon ECR
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Push Backend Docker Image to Amazon ECR
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: ${{ secrets.AWS_REGION }}
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: api
+          IMAGE_TAG: latest
         run: |
-          # Log in to Amazon ECR
-          aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
-          
-          # Tag the Docker image for Amazon ECR
-          docker tag bamideleflint/api:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_BACKEND_REPO }}:latest
-          
-          # Push the Docker image to Amazon ECR
-          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_BACKEND_REPO }}:latest
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+        working-directory: api
+
