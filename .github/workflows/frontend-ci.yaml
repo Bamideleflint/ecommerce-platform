@@ -20,6 +20,14 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: '14'
+      
+      -  name: Cache Node.js dependencies
+        uses: actions/cache@v2
+        with:
+            path: ~/.npm
+            key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
+            restore-keys: |
+              ${{ runner.os }}-npm-    
 
       # Install frontend dependencies
       - name: Install frontend dependencies
@@ -41,3 +49,19 @@ jobs:
       # Push the Frontend Docker image
       - name: Push Frontend Docker image
         run: docker push bamideleflint/app:latest
+
+      # Authenticate with AWS ECR and push Docker image
+      - name: Push Docker image to Amazon ECR
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+        run: |
+          # Log in to Amazon ECR
+          aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
+          
+          # Tag the Docker image for Amazon ECR
+          docker tag bamideleflint/app:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_BACKEND_REPO }}:latest
+          
+          # Push the Docker image to Amazon ECR
+          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_BACKEND_REPO }}:latest  
